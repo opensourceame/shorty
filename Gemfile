@@ -14,6 +14,7 @@ gem 'httparty'
 gem 'redis'
 
 # other
+gem 'json'
 
 # debug
 gem 'pry', group: :development

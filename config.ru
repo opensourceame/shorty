@@ -7,12 +7,14 @@ end
 $stdout.sync = true
 $stderr.sync = true
 
-use Shorty::API::Response
+# use Shorty::API::Response
 
-routes = Rack::Mount::RouteSet.new do |set|
-  set.add_route Shorty::Endpoints::Shorten,         :path_info => %r{^/shorten}
-end
+# routes = Rack::Mount::RouteSet.new do |set|
+#   set.add_route Shorty::Endpoints::Shorten
+# end
+#
+# puts "*** Starting Shorty ***"
+# binding.pry
+# run routes
 
-puts "*** Starting Shorty ***"
-
-run routes
+run Shorty::App

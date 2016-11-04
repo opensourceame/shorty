@@ -20,7 +20,7 @@ module Shorty
 
       unless code.nil?
 
-        return ERROR_CODE_INVALID unless code.match(CODE_REGEX)
+        return ERROR_CODE_INVALID unless valid_shortcode?(code)
 
         store(url, code)
 
@@ -52,6 +52,10 @@ module Shorty
 
       get_code(code)
 
+    end
+
+    def valid_shortcode?(code)
+      code.match(CODE_REGEX)
     end
 
 protected
