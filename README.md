@@ -2,8 +2,18 @@
 
 ## Installation
 
-* bundle install
-* unicorn
+#### Requirements
+
+* ruby 2.x
+* Redis server for storage
+* bundler
+
+#### To install
+
+```
+ bundle install
+ unicorn / rackup / other rack server
+```
 
 ## Storage
 
@@ -12,5 +22,5 @@ The Redis DB is flushed upon initialisation of the development environment.
  
 ## Tests
 
-Simply run *rspec* from the root directory of the project.
+Simply run ```rspec``` from the root directory of the project.
 

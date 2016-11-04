@@ -14,7 +14,7 @@ class Shorty::App < Sinatra::Base
 
     url       = params[:url]
     shortcode = params[:shortcode]
-    shortened = Shorty::URL.shorten(url, shortcode)
+    shortened = shorty.shorten(url, shortcode)
 
     check_code(shortened)
 
@@ -40,14 +40,14 @@ class Shorty::App < Sinatra::Base
   # get statistics for a shortcode
   get '/:shortcode/stats' do
 
-    data = shorty.stats(params[:shortcode])
+    stats = shorty.stats(params[:shortcode])
 
-    check_code(data)
+    check_code(stats)
 
     response.set_data({
-        startDate:      data['ctime'],
-        lastSeenDate:   data['atime'],
-        redirectCount:  data['hits'],
+        startDate:      DateTime.parse(stats['ctime']).iso8601,
+        lastSeenDate:   DateTime.parse(stats['atime']).iso8601,
+        redirectCount:  stats['hits'].to_i,
     })
 
   end
@@ -57,12 +57,11 @@ private
   # note, a case statement could be used here, as could some kind of error code + message map
   # but this method is simpler for a small number of possible errors
   def check_code(code)
-    response.fail('invalid URL',          400) if code == Shorty::URL::ERROR_URL_INVALID
     response.fail('shortcode in use',     409) if code == Shorty::URL::ERROR_CODE_EXISTS
     response.fail('invalid shortcode',    422) if code == Shorty::URL::ERROR_CODE_INVALID
     response.fail('shortcode not found',  404) if code == Shorty::URL::ERROR_CODE_NOT_FOUND
+    response.fail('invalid URL',          400) if code == Shorty::URL::ERROR_URL_INVALID
   end
-
 
   def shorty
     @shorty ||= Shorty::URL.new

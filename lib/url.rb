@@ -40,7 +40,7 @@ module Shorty
       return ERROR_CODE_NOT_FOUND unless code_stored?(code)
 
       log_hit(code)
-      get_code(code)
+      fetch_code(code)
 
     end
 
@@ -50,7 +50,7 @@ module Shorty
 
       return ERROR_CODE_NOT_FOUND unless code_stored?(code)
 
-      get_code(code)
+      fetch_code(code)
 
     end
 
@@ -96,19 +96,24 @@ module Shorty
     end
 
     def generate_code
-      SecureRandom.urlsafe_base64[0..5]
+      code = SecureRandom.urlsafe_base64(4)
+
+      return generate_code if code.include?('-')
+
+      code
     end
 
     def url_hash(url)
       Digest::MD5.hexdigest(url)
     end
 
-    def get_code(code)
+    def fetch_code(code)
       redis.hgetall("shorty:code:#{code}")
     end
 
     def log_hit(code)
-      redis.hincrby("shorty:code:#{code}", :hits, 1)
+      redis.hincrby("shorty:code:#{code}", :hits,  1)
+      redis.hset("shorty:code:#{code}",    :atime, Time.now)
     end
 
 private

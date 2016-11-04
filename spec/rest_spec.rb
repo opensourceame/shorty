@@ -1,18 +1,44 @@
+
 require 'rack/test'
-require_relative '../init'
+# require_relative '../init'
 
 describe 'Shorty API' do
 
   include Rack::Test::Methods
 
+  LONG_URL = 'http://www.thelongestdomainnameintheworldandthensomeandthensomemoreandmore.com'
+
   def app
-    Sinatra::Application
+     Shorty::App
+  end
+
+  it 'creates a shortcode' do
+    post '/shorten', {
+        url:        LONG_URL,
+        shortcode:  'long2B',
+    }
+
+    expect(last_response.status).to eq 201
   end
 
   it "gets a code" do
-    get '/abc123'
-binding.pry
-    expect(last_response).to be_ok
-    expect(last_response.body).to eq('Hello World')
+
+    get '/long2B'
+
+    expect(last_response.status).to eq 302
+    expect(last_response.headers['Location']).to eq LONG_URL
+
+  end
+
+  it 'gets stats for a code' do
+
+    get '/long2B/stats'
+
+    expect(last_response.status).to eq 200
+
+    data = JSON.parse(last_response.body)
+
+    expect(data['redirectCount']).to eq 3
+
   end
 end
