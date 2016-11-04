@@ -58,7 +58,24 @@ module Shorty
       code.match(CODE_REGEX)
     end
 
-protected
+    # a very simple way to validate a URL
+    def valid_url?(url)
+      uri = URI.parse(url)
+
+      uri.absolute?
+    rescue
+      false
+    end
+
+    def url_stored?(url)
+      redis.exists("shorty:url:#{url_hash(url)}:code")
+    end
+
+    def code_stored?(code)
+      redis.exists("shorty:code:#{code}")
+    end
+
+    protected
 
     # store this mofo in Redis
     # @param url [String] the URL to shorten
@@ -86,29 +103,12 @@ protected
       Digest::MD5.hexdigest(url)
     end
 
-    def url_stored?(url)
-      redis.exists("shorty:url:#{url_hash(url)}:code")
-    end
-
-    def code_stored?(code)
-      redis.exists("shorty:code:#{code}")
-    end
-
     def get_code(code)
       redis.hgetall("shorty:code:#{code}")
     end
 
     def log_hit(code)
       redis.hincrby("shorty:code:#{code}", :hits, 1)
-    end
-
-    # a very simple way to validate a URL
-    def valid_url?(url)
-      uri = URI.parse(url)
-
-      uri.absolute?
-    rescue
-      false
     end
 
 private
