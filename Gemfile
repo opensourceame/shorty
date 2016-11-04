@@ -1,6 +1,6 @@
 source 'http://rubygems.org'
 
-# Standard gems
+# standard gems
 gem 'rack'
 gem 'rack-mount'
 gem 'logger'
@@ -13,5 +13,8 @@ gem 'httparty'
 # storage
 gem 'redis'
 
+# other
+
 # debug
 gem 'pry', group: :development
+

@@ -1,5 +1,3 @@
-
-
 describe Shorty::URL do
 
   describe 'shorten URL' do
