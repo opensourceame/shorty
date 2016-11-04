@@ -1,13 +1,13 @@
 module Shorty
   class URL
 
-    REGEX = /^[0-9a-zA-Z_]{6}$/
+    CODE_REGEX = /^[0-9a-zA-Z_]{6}$/
 
-    ERROR_URL_INVALID   = 1
-    ERROR_URL_EXISTS    = 2
-    ERROR_CODE_INVALID  = 3
-    ERROR_CODE_EXISTS   = 4
-
+    ERROR_URL_INVALID      = 1
+    ERROR_URL_EXISTS       = 2
+    ERROR_CODE_INVALID     = 3
+    ERROR_CODE_EXISTS      = 4
+    ERROR_CODE_NOT_FOUND   = 5
 
     # @param url [String] the URL to shorten
     # @param code [String] an optional code
@@ -20,7 +20,7 @@ module Shorty
 
       unless code.nil?
 
-        return ERROR_CODE_INVALID unless code.match(REGEX)
+        return ERROR_CODE_INVALID unless code.match(CODE_REGEX)
 
         store(url, code)
 
@@ -37,6 +37,8 @@ module Shorty
 
     def get(code)
 
+      return ERROR_CODE_NOT_FOUND unless code_stored?(code)
+
       log_hit(code)
       get_code(code)
 
@@ -46,15 +48,10 @@ module Shorty
     # @return [Hash] a hash of statistics
     def stats(code)
 
-      return false unless code_stored?(code)
+      return ERROR_CODE_NOT_FOUND unless code_stored?(code)
 
-      data = get_code(code)
+      get_code(code)
 
-      {
-          startDate:      data['ctime'],
-          lastSeenDate:   data['atime'],
-          redirectCoutn:  data['hits']
-      }
     end
 
 protected
@@ -67,7 +64,7 @@ protected
       redis.hmset("shorty:code:#{code}",
           :url,    url,
           :ctime,  Time.now,
-          :atime,  Time.now
+          :atime,  Time.now,
           :hits,   1
       )
 
@@ -78,7 +75,7 @@ protected
     end
 
     def generate_code
-      SecureRandom.urlsafe_base64(6)[0..5]
+      SecureRandom.urlsafe_base64[0..5]
     end
 
     def url_hash(url)
