@@ -13,7 +13,7 @@ describe Shorty::URL do
     it 'create a generated short code' do
 
       shorty  = Shorty::URL.new
-      result  = shorty.shorten('http://github.com/opensourcame')
+      result  = shorty.shorten('http://www.redhotpawn.com/')
 
       expect(result).to match(/^[0-9a-zA-Z_]{6}$/)
     end
@@ -22,7 +22,7 @@ describe Shorty::URL do
 
       shorty  = Shorty::URL.new
       result  = shorty.stats('abc123')
-
+binding.pry
       expect(result).to be_a?(Hash)
     end
 
@@ -31,7 +31,7 @@ describe Shorty::URL do
       shorty  = Shorty::URL.new
       result  = shorty.shorten('http://github.com/opensourcame')
 
-      expect(result).to be false
+      expect(result).to eq Shorty::URL::ERROR_URL_EXISTS
     end
 
     it 'tries to create a code that already exists' do
@@ -39,7 +39,7 @@ describe Shorty::URL do
       shorty  = Shorty::URL.new
       result  = shorty.shorten('http://bbcgoodfood.com', 'abc123')
 
-      expect(result).to be false
+      expect(result).to eq Shorty::URL::ERROR_CODE_EXISTS
     end
 
     it 'tries to shorten an invalid URL' do
@@ -47,7 +47,7 @@ describe Shorty::URL do
       shorty  = Shorty::URL.new
       result  = shorty.shorten('eat_my_shorts', 'abc123')
 
-      expect(result).to be false
+      expect(result).to eq Shorty::URL::ERROR_URL_INVALID
     end
 
     it 'tries to specify an invalid short code' do
@@ -55,7 +55,7 @@ describe Shorty::URL do
       shorty  = Shorty::URL.new
       result  = shorty.shorten('http://www.urbandictionary.com', 'iShortYouNot!')
 
-      expect(result).to be false
+      expect(result).to eq Shorty::URL::ERROR_CODE_INVALID
     end
 
   end
