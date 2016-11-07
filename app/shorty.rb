@@ -44,6 +44,7 @@ class Shorty::App < Sinatra::Base
 
     check_code(stats)
 
+    # NOTE: Redis returns strings, so convert to specific types here
     response.set_data({
         startDate:      DateTime.parse(stats['ctime']).iso8601,
         lastSeenDate:   DateTime.parse(stats['atime']).iso8601,

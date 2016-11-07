@@ -4,19 +4,23 @@ module Shorty
     CODE_REGEX = /^[0-9a-zA-Z_]{6}$/
 
     ERROR_URL_INVALID      = 1
-    ERROR_URL_EXISTS       = 2
-    ERROR_CODE_INVALID     = 3
-    ERROR_CODE_EXISTS      = 4
-    ERROR_CODE_NOT_FOUND   = 5
+
+    ERROR_CODE_INVALID     = 10
+    ERROR_CODE_EXISTS      = 11
+    ERROR_CODE_NOT_FOUND   = 12
 
     # @param url [String] the URL to shorten
     # @param code [String] an optional code
     # @return [String, Integer] the code or an error code on failure
     def shorten(url, code = nil)
 
+      # if someone tries to shorten a URL we've already shortened then give them the existing code
+      if url_stored?(url)
+        return fetch_url(url)
+      end
+
       return ERROR_URL_INVALID unless valid_url?(url)
-      return ERROR_URL_EXISTS  if url_stored?(url)
-      return ERROR_CODE_EXISTS if code && code_stored?(code)
+      return ERROR_CODE_EXISTS if     code_stored?(code)
 
       unless code.nil?
 
@@ -75,7 +79,7 @@ module Shorty
       redis.exists("shorty:code:#{code}")
     end
 
-    protected
+protected
 
     # store this mofo in Redis
     # @param url [String] the URL to shorten
@@ -109,6 +113,10 @@ module Shorty
 
     def fetch_code(code)
       redis.hgetall("shorty:code:#{code}")
+    end
+
+    def fetch_url(url)
+      redis.get("shorty:url:#{url_hash(url)}:code")
     end
 
     def log_hit(code)

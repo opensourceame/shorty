@@ -41,4 +41,24 @@ describe 'Shorty API' do
     expect(data['redirectCount']).to eq 3
 
   end
+
+  it "gets an invalid code" do
+
+    get '/NotThere'
+
+    expect(last_response.status).to eq 404
+
+  end
+
+  it 'tries to create an existing shortcode' do
+
+    post '/shorten', {
+        url:        LONG_URL + '/breakme',
+        shortcode:  'long2B',
+    }
+
+    expect(last_response.status).to eq 409
+  end
+
+
 end

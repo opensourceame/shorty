@@ -30,7 +30,7 @@ describe Shorty::URL do
 
     result  = shorty.shorten('http://github.com/opensourceame')
 
-    expect(result).to eq Shorty::URL::ERROR_URL_EXISTS
+    expect(result).to eq 'abc123'
   end
 
   it 'tries to create a code that already exists' do
