@@ -19,6 +19,16 @@ class Shorty::App < Sinatra::Base
     check_code(shortened)
 
     response.status = 201
+
+    # XXX: an exception to the error checking:
+    #      If a user tries to create a new shortcode for a URL that has already
+    #      been shortened, return the existing code with a 200 instead of 201
+
+    if (shortened == Shorty::URL::ERROR_URL_EXISTS)
+      shortened = shorty.get(shortcode)
+      response.status = 200
+    end
+
     response.set_data({
         url:        url,
         shortcode:  shortened,

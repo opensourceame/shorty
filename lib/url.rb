@@ -4,6 +4,7 @@ module Shorty
     CODE_REGEX = /^[0-9a-zA-Z_]{6}$/
 
     ERROR_URL_INVALID      = 1
+    ERROR_URL_EXISTS       = 2
 
     ERROR_CODE_INVALID     = 10
     ERROR_CODE_EXISTS      = 11
@@ -12,11 +13,18 @@ module Shorty
     # @param url [String] the URL to shorten
     # @param code [String] an optional code
     # @return [String, Integer] the code or an error code on failure
-    def shorten(url, code = nil)
+    def shorten(url = nil, code = nil)
+
+      return ERROR_URL_INVALID unless url
 
       # if someone tries to shorten a URL we've already shortened then give them the existing code
       if url_stored?(url)
-        return fetch_url(url)
+
+        shortcode = fetch_url(url)
+
+        return ERROR_URL_EXISTS if code && (code == shortcode)
+        return shortcode
+
       end
 
       return ERROR_URL_INVALID unless valid_url?(url)
@@ -39,6 +47,8 @@ module Shorty
 
     end
 
+    # @param code [String] the shortcode
+    # @return [String] the URL related to the shortcode
     def get(code)
 
       return ERROR_CODE_NOT_FOUND unless code_stored?(code)
@@ -48,7 +58,7 @@ module Shorty
 
     end
 
-    # @param code [String] the short code
+    # @param code [String] the shortcode
     # @return [Hash] a hash of statistics
     def stats(code)
 
