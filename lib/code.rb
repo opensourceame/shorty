@@ -1,38 +1,36 @@
 module Shorty
-  class URL
+  class Code
 
-    CODE_REGEX = /^[0-9a-zA-Z_]{6}$/
-
-    ERROR_URL_INVALID      = 1
-    ERROR_URL_EXISTS       = 2
-
-    ERROR_CODE_INVALID     = 10
-    ERROR_CODE_EXISTS      = 11
-    ERROR_CODE_NOT_FOUND   = 12
+    CODE_REGEX          = /^[0-9a-zA-Z_]{6}$/
+    KEY_EXPIRE_SECONDS  = 31556926               # one year
 
     # @param url [String] the URL to shorten
     # @param code [String] an optional code
-    # @return [String, Integer] the code or an error code on failure
-    def shorten(url = nil, code = nil)
+    # @return [Shorty::Code]
+    def shorten_url(url = nil, code = nil)
 
-      return ERROR_URL_INVALID unless url
+      raise ArgumentError, 'URL must be specified' unless url
+      raise ArgumentError, 'invalid URL' unless valid_url?(url)
 
-      # if someone tries to shorten a URL we've already shortened then give them the existing code
       if url_stored?(url)
 
-        shortcode = fetch_url(url)
+        shortcode = fetch_code_for_url(url)
 
-        return ERROR_URL_EXISTS if code && (code == shortcode)
+        # if they've specified a code and it's different to the stored one then raise an error
+        raise StandardError, 'different code stord for this URL' if code && (code != shortcode)
+
+        # otherwise send them the code we created previously
         return shortcode
 
       end
 
-      return ERROR_URL_INVALID unless valid_url?(url)
-      return ERROR_CODE_EXISTS if     code_stored?(code)
+      if code_stored?(code)
+        raise StandardError, 'code exists'
+      end
 
       unless code.nil?
 
-        return ERROR_CODE_INVALID unless valid_shortcode?(code)
+        raise ArgumentError, 'invalid code' unless valid_shortcode?(code)
 
         store(url, code)
 
@@ -51,10 +49,10 @@ module Shorty
     # @return [String] the URL related to the shortcode
     def get(code)
 
-      return ERROR_CODE_NOT_FOUND unless code_stored?(code)
+      raise IndexError, 'code not found' unless code_stored?(code)
 
       log_hit(code)
-      fetch_code(code)
+      fetch_data_for_code(code)
 
     end
 
@@ -62,9 +60,9 @@ module Shorty
     # @return [Hash] a hash of statistics
     def stats(code)
 
-      return ERROR_CODE_NOT_FOUND unless code_stored?(code)
+      raise IndexError, 'code not found' unless code_stored?(code)
 
-      fetch_code(code)
+      fetch_data_for_code(code)
 
     end
 
@@ -89,7 +87,7 @@ module Shorty
       redis.exists("shorty:code:#{code}")
     end
 
-protected
+    protected
 
     # store this mofo in Redis
     # @param url [String] the URL to shorten
@@ -97,35 +95,34 @@ protected
     def store(url, code)
 
       redis.hmset("shorty:code:#{code}",
-          :url,    url,
-          :ctime,  Time.now,
-          :atime,  Time.now,
-          :hits,   1
+                  :url,    url,
+                  :ctime,  Time.now,
+                  :atime,  Time.now,
+                  :hits,   1
       )
 
       log_hit(code)
 
+      key = "shorty:url:#{url_hash(url)}:code"
+
       # set a reverse key for quick lookup
-      redis.set("shorty:url:#{url_hash(url)}:code", code)
+      redis.set(key, code)
+      redis.expire(key, KEY_EXPIRE_SECONDS)
     end
 
     def generate_code
-      code = SecureRandom.urlsafe_base64(4)
-
-      return generate_code if code.include?('-')
-
-      code
+      SecureRandom.urlsafe_base64(4).gsub('-', '_')
     end
 
     def url_hash(url)
       Digest::MD5.hexdigest(url)
     end
 
-    def fetch_code(code)
+    def fetch_data_for_code(code)
       redis.hgetall("shorty:code:#{code}")
     end
 
-    def fetch_url(url)
+    def fetch_code_for_url(url)
       redis.get("shorty:url:#{url_hash(url)}:code")
     end
 
@@ -134,7 +131,7 @@ protected
       redis.hset("shorty:code:#{code}",    :atime, Time.now)
     end
 
-private
+    private
 
     def redis
       @redis = Redis.new(db: Sinatra::Application.environment == :development ? 15 : 1)

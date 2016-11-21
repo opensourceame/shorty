@@ -62,7 +62,7 @@ describe 'Shorty API' do
         shortcode:  'shortn',
     }
 
-    expect(last_response.status).to eq 400
+    expect(last_response.status).to eq 409
 
   end
 
@@ -73,7 +73,7 @@ describe 'Shorty API' do
         shortcode:  'cannot-do-this',
     }
 
-    expect(last_response.status).to eq 422
+    expect(last_response.status).to eq 409
   end
 
   it 'tries to create an existing shortcode' do
@@ -83,12 +83,7 @@ describe 'Shorty API' do
         shortcode:  'InLieu',
     }
 
-    expect(last_response.status).to eq 200
-
-    data = JSON.parse(last_response.body)
-
-    # match the shortcode that was previously assigned to this URL
-    expect(data['shortcode']).to eq 'long2B'
+    expect(last_response.status).to eq 409
 
   end
 

@@ -14,19 +14,22 @@ class Shorty::App < Sinatra::Base
 
     url       = params[:url]
     shortcode = params[:shortcode]
-    shortened = shorty.shorten(url, shortcode)
-
-    check_code(shortened)
 
     response.status = 201
 
-    # XXX: an exception to the error checking:
-    #      If a user tries to create a new shortcode for a URL that has already
-    #      been shortened, return the existing code with a 200 instead of 201
+    begin
+      shortened = shorty.shorten_url(url, shortcode)
 
-    if (shortened == Shorty::URL::ERROR_URL_EXISTS)
-      shortened = shorty.get(shortcode)
-      response.status = 200
+    rescue ArgumentError => e
+
+      response.fail(e.to_s, 409)
+
+    rescue StandardError => e
+
+      response.fail(e.to_s, 409)
+
+    rescue Exception => e
+      response.fail(e.to_s)
     end
 
     response.set_data({
@@ -39,9 +42,12 @@ class Shorty::App < Sinatra::Base
   get '/:shortcode' do
 
     shortcode = params[:shortcode]
-    result    = shorty.get(shortcode)
 
-    check_code(result)
+    begin
+      result = shorty.get(shortcode)
+    rescue => e
+      response.fail(e.to_s, 404)
+    end
 
     redirect(result['url'])
 
@@ -50,9 +56,11 @@ class Shorty::App < Sinatra::Base
   # get statistics for a shortcode
   get '/:shortcode/stats' do
 
-    stats = shorty.stats(params[:shortcode])
-
-    check_code(stats)
+    begin
+      stats = shorty.stats(params[:shortcode])
+    rescue => e
+      response.fail(e.to_s, 404)
+    end
 
     # NOTE: Redis returns strings, so convert to specific types here
     response.set_data({
@@ -65,17 +73,8 @@ class Shorty::App < Sinatra::Base
 
 private
 
-  # note, a case statement could be used here, as could some kind of error code + message map
-  # but this method is simpler for a small number of possible errors
-  def check_code(code)
-    response.fail('shortcode in use',     409) if code == Shorty::URL::ERROR_CODE_EXISTS
-    response.fail('invalid shortcode',    422) if code == Shorty::URL::ERROR_CODE_INVALID
-    response.fail('shortcode not found',  404) if code == Shorty::URL::ERROR_CODE_NOT_FOUND
-    response.fail('invalid URL',          400) if code == Shorty::URL::ERROR_URL_INVALID
-  end
-
   def shorty
-    @shorty ||= Shorty::URL.new
+    @shorty ||= Shorty::Code.new
   end
 
 end
