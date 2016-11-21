@@ -115,7 +115,7 @@ module Shorty
     end
 
     def url_hash(url)
-      Digest::MD5.hexdigest(url)
+      Digest::SHA384.hexdigest(url)
     end
 
     def fetch_data_for_code(code)
